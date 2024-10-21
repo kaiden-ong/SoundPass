@@ -1,11 +1,12 @@
 import speech_recognition as sr
 import json
 from playsound import playsound
+import pyttsx3
 
 def record_text(r):
     while(1):
         try:
-            with sr.Microphone(device_index=3) as source2:
+            with sr.Microphone(device_index=1) as source2:
                 print("Adjusting for ambient noise... Please wait.")
                 r.adjust_for_ambient_noise(source2, duration=.1)
                 print("Microphone is now ready. Start speaking...")
@@ -24,23 +25,29 @@ def output_text(text):
     f.close()
     return
 
-def main(door_status, pw):
+def main(status, pw, engine):
     r = sr.Recognizer()
     while(1):
         text = record_text(r)
         if text == "stop":
             return None
-        if door_status["status"] == "unlocked":
+        if status == "unlocked":
             if text == "lock door":
-                door_status["status"] = "locked"
+                output_text(text)
                 return False
             else:
-                playsound("./audio/alr_unlocked.mp3")
+                output_text(text)
+                engine.say('Your door is already unlocked')
+                engine.runAndWait()
+                # playsound('./audio/alr_unlocked.mp3')
                 print("door is already unlocked")
                 return None
         else:
             if text == "lock door":
-                playsound("./audio/alr_locked.mp3")
+                output_text(text)
+                engine.say('Your door is already locked')
+                engine.runAndWait()
+                # playsound('./audio/alr_locked.mp3')
                 print("the door is already locked")
                 return None
             output_text(text)
@@ -50,21 +57,30 @@ def main(door_status, pw):
                 return password == pw
 
 if __name__=="__main__":
+    engine = pyttsx3.init()
+    engine.setProperty('rate', 150)
+    engine.setProperty('voice', engine.getProperty('voices')[1].id)
     with open('door.json', 'r') as file:
         data = json.load(file)
         door_status = {"status": data["door_status"]}
         password = data["password"]
     with open("output.txt", "w") as f:
         pass
-    mainReturn = main(door_status, password)
+    mainReturn = main(door_status["status"], password, engine)
     if mainReturn != None:
         if mainReturn:
             door_status["status"] = "unlocked"
-            playsound("./audio/unlocking.mp3")
+            engine.say('Unlocking your door')
+            engine.runAndWait()
+            # playsound('./audio/unlocking.mp3')
             print("door unlocks")
         else:
-            playsound("./audio/locking.mp3")
+            door_status["status"] = "locked"
+            engine.say('Locking your door')
+            engine.runAndWait()
+            # playsound('./audio/locking.mp3')
             print("door locks")
     data["door_status"] = door_status["status"]
     with open('door.json', 'w') as file:
         json.dump(data, file)
+    engine.stop()
