@@ -28,6 +28,12 @@ def output_text(text):
     f.close()
     return
 
+def record_snippet():
+    # while speaker is saying password, record snippet
+    # split snippet into .5 - 1 sec sections
+    # send to ml model
+    return
+
 def withinFive(first_time):
     if len(first_time) == 0:
         return False, 0
